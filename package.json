@@ -1,0 +1,17 @@
+{
+  "name": "cricket-proxy-server",
+  "version": "1.0.0",
+  "description": "Proxy server for cricket scores and news",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0"
+  }
+}
+

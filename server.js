@@ -23,11 +23,8 @@ const port = process.env.PORT || 3000;
 // Get the v5 token from environment variables.
 const CRICKET_V5_TOKEN = process.env.CRICKET_V5_TOKEN;
 
-// --- !! THIRD FIX (FINAL) !! ---
-// The correct domain is .com, not .live.
-// The provider's documentation had a typo.
+// The correct domain is .com
 const API_BASE_URL = 'https://api.cricliveline.com/api/v5';
-// --- !! END FIX !! ---
 
 // --- Middleware ---
 app.use(cors()); // Enable CORS
@@ -56,7 +53,8 @@ async function proxyRequest(req, res, apiPath) {
         }
         const data = await apiResponse.json();
         res.json(data);
-    } catch (error) {
+    } catch (error)
+    {
         console.error(`Error fetching from ${apiPath}:`, error.message);
         res.status(500).json({ error: `Failed to fetch data from ${apiPath}.` });
     }
@@ -116,16 +114,14 @@ app.get('/api/v5/news', (req, res) => {
 app.get('/api/v5/scorecard/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) {
-        return res.status(4Two-step user verification:
-* User enters their phone number and submits.
-* A `POST` request is made to `/api/v5/send-otp` with the phone number.
-* The API sends a 4-digit OTP to the user's phone.
-* The user is shown an OTP input field.
-* User enters the OTP and submits.
-* A `POST` request is made to `/api/v5/verify-otp` with the phone number *and* the OTP.
-* If the OTP is correct, the API responds with `status: true` and a `user_id`.
-* The `user_id` should be stored in `localStorage` to keep the user logged in.
+        return res.status(400).json({ error: 'Match ID is required.' });
+    }
+    proxyRequest(req, res, `/match-scorecard?match_id=${matchId}`);
+});
 
 
-
+// Start the server
+app.listen(port, () => {
+    console.log(`Cricket v5 Proxy server running on http://localhost:${port}`);
+});
 

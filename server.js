@@ -1,6 +1,6 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - FINAL CORRECTED ENDPOINTS
+* LIVE CRICKET BACKEND PROXY (v5 API) - Enhanced Logging
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the
@@ -10,7 +10,7 @@
 * receives requests from your frontend, and forwards them
 * to the real API, adding your token securely.
 *
-* This version uses the specific endpoints confirmed by API docs.
+* This version includes extra logging to debug 404 errors.
 */
 
 const express = require('express');
@@ -43,12 +43,15 @@ app.get('/', (req, res) => {
  */
 async function fetchFromApi(res, apiUrl, endpointName) {
     if (!CRICKET_V5_TOKEN) {
-        console.error(`API Token (CRICKET_V5_TOKEN) is not configured on the server.`);
+        console.error(`[${endpointName}] API Token (CRICKET_V5_TOKEN) is not configured on the server.`);
         return res.status(500).json({ error: 'API token is not configured on the server. Set CRICKET_V5_TOKEN.' });
     }
-    console.log(`Proxying request for ${endpointName} to: ${apiUrl}`);
-
+    
+    // === ENHANCED LOGGING ===
+    console.log(`[${endpointName}] Constructing API URL: ${apiUrl}`); 
+    
     try {
+        console.log(`[${endpointName}] Attempting fetch from: ${apiUrl}`); // Log the exact URL being fetched
         const apiResponse = await fetch(apiUrl);
 
         // Check if the response status is OK (2xx range)
@@ -60,7 +63,8 @@ async function fetchFromApi(res, apiUrl, endpointName) {
             } catch (e) {
                 // Keep as text if not JSON
             }
-            console.error(`API Error for ${endpointName} (${apiUrl}): Status ${apiResponse.status}, Body:`, errorBody);
+            // Log the detailed error
+            console.error(`[${endpointName}] API Error (${apiUrl}): Status ${apiResponse.status}, Body:`, errorBody);
             // Send back the specific status code from the API
             return res.status(apiResponse.status).json({
                 error: `API error: ${apiResponse.status} ${apiResponse.statusText}`,
@@ -70,11 +74,12 @@ async function fetchFromApi(res, apiUrl, endpointName) {
 
         // If response is OK, parse JSON and send to frontend
         const data = await apiResponse.json();
+        console.log(`[${endpointName}] Successfully fetched data from: ${apiUrl}`);
         res.json(data);
 
     } catch (error) {
         // Handle network errors (like timeouts, DNS issues)
-        console.error(`Network Error in fetchFromApi for ${endpointName} (${apiUrl}):`, error.message);
+        console.error(`[${endpointName}] Network Error (${apiUrl}):`, error.message);
         res.status(500).json({ error: `Failed to fetch ${endpointName}. Reason: ${error.message}` });
     }
 }
@@ -142,7 +147,7 @@ app.get('/api/v5/points-table/:seriesId', (req, res) => {
     const { seriesId } = req.params;
     if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
-    // Correct Path: /pointTableBySeriesId/{seriesId}/{token} - Using correct camelCase
+    // Correct Path: /pointTableBySeriesId/{seriesId}/{token} - Using correct camelCase from docs
     const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`; 
     fetchFromApi(res, API_URL, 'points-table');
 });
@@ -168,7 +173,7 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
-    // Correct Path: /matchInfoByMatchId/{matchId}/{token} - Using correct camelCase
+    // Correct Path: /matchInfoByMatchId/{matchId}/{token} - Using correct camelCase from docs
     const API_URL = `${API_BASE_URL}/matchInfoByMatchId/${matchId}/${CRICKET_V5_TOKEN}`; 
     fetchFromApi(res, API_URL, 'match-info');
 });

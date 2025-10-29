@@ -1,6 +1,6 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - Split Live Endpoints
+* LIVE CRICKET BACKEND PROXY (v5 API) - Merged Live Endpoints
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the

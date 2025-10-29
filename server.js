@@ -23,9 +23,9 @@ const port = process.env.PORT || 3000;
 // Get the v5 token from environment variables.
 const CRICKET_V5_TOKEN = process.env.CRICKET_V5_TOKEN;
 
-// --- !! FIX !! ---
-// The correct domain is .live, not .com
-const API_BASE_URL = 'https://api.cricketliveline.live/api/v5';
+// --- !! SECOND FIX !! ---
+// The correct domain is api.cricliveline.live (not cricketliveline)
+const API_BASE_URL = 'https://api.cricliveline.live/api/v5';
 // --- !! END FIX !! ---
 
 // --- Middleware ---
@@ -43,7 +43,9 @@ async function proxyRequest(req, res, apiPath) {
         return res.status(500).json({ error: 'API token is not configured on the server. Set CRICKET_V5_TOKEN.' });
     }
 
-    const API_URL = `${API_BASE_URL}${apiPath}?token=${CRICKET_V5_TOKEN}`;
+    // Append the token to the path. If the path already has query params, use &
+    const separator = apiPath.includes('?') ? '&' : '?';
+    const API_URL = `${API_BASE_URL}${apiPath}${separator}token=${CRICKET_V5_TOKEN}`;
 
     try {
         const apiResponse = await fetch(API_URL);
@@ -94,6 +96,7 @@ app.get('/api/v5/points-table/:seriesId', (req, res) => {
     if (!seriesId) {
         return res.status(400).json({ error: 'Series ID is required.' });
     }
+    // Note: The API path already has a query param, so proxyRequest will use '&'
     proxyRequest(req, res, `/series-points-table?series_id=${seriesId}`);
 });
 
@@ -114,6 +117,7 @@ app.get('/api/v5/scorecard/:matchId', (req, res) => {
     if (!matchId) {
         return res.status(400).json({ error: 'Match ID is required.' });
     }
+    // Note: The API path already has a query param, so proxyRequest will use '&'
     proxyRequest(req, res, `/match-scorecard?match_id=${matchId}`);
 });
 
@@ -122,4 +126,6 @@ app.get('/api/v5/scorecard/:matchId', (req, res) => {
 app.listen(port, () => {
     console.log(`Cricket v5 Proxy server running on http://localhost:${port}`);
 });
+
+
 

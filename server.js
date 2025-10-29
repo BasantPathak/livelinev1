@@ -1,6 +1,6 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - Enhanced Logging
+* LIVE CRICKET BACKEND PROXY (v5 API) - Corrected Points Table Path
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the
@@ -10,12 +10,12 @@
 * receives requests from your frontend, and forwards them
 * to the real API, adding your token securely.
 *
-* This version includes extra logging to debug 404 errors.
+* This version corrects the path for the points table endpoint.
 */
 
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch'); // Ensure you have node-fetch installed (npm install node-fetch)
+const fetch = require('node-fetch'); // Ensure you have node-fetch installed (npm install node-fetch@2) - Use v2 for require
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -47,12 +47,21 @@ async function fetchFromApi(res, apiUrl, endpointName) {
         return res.status(500).json({ error: 'API token is not configured on the server. Set CRICKET_V5_TOKEN.' });
     }
     
-    // === ENHANCED LOGGING ===
     console.log(`[${endpointName}] Constructing API URL: ${apiUrl}`); 
     
+    // --- Define Request Options with Headers ---
+    const requestOptions = {
+        method: 'GET', // Assuming all are GET requests
+        headers: {
+            'Accept': 'application/json', // Request JSON response
+            'User-Agent': 'NodeFetchProxy/1.0' // Identify the client
+        }
+    };
+    // --- End Header Definition ---
+
     try {
-        console.log(`[${endpointName}] Attempting fetch from: ${apiUrl}`); // Log the exact URL being fetched
-        const apiResponse = await fetch(apiUrl);
+        console.log(`[${endpointName}] Attempting fetch from: ${apiUrl} with headers:`, requestOptions.headers); // Log headers too
+        const apiResponse = await fetch(apiUrl, requestOptions); // Pass options to fetch
 
         // Check if the response status is OK (2xx range)
         if (!apiResponse.ok) {
@@ -141,14 +150,17 @@ app.get('/api/v5/news', (req, res) => {
 
 /**
  * @route   GET /api/v5/points-table/:seriesId
- * @desc    Fetches points table for a specific series
+ * @desc    Fetches points table (Note: API endpoint doesn't use seriesId in path)
  */
 app.get('/api/v5/points-table/:seriesId', (req, res) => {
-    const { seriesId } = req.params;
-    if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
+    // The seriesId is passed from the frontend dropdown, but the actual API
+    // endpoint for pointsTable doesn't seem to use it in the path according
+    // to the fetch snippet provided. We still accept it in the route for consistency.
+    const { seriesId } = req.params; 
+    console.log(`[points-table] Received request for seriesId: ${seriesId} (Note: seriesId not used in API path)`);
     
-    // Correct Path: /pointTableBySeriesId/{seriesId}/{token} - Using correct camelCase from docs
-    const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`; 
+    // Correct Path based on fetch snippet: /pointsTable/{token}
+    const API_URL = `${API_BASE_URL}/pointsTable/${CRICKET_V5_TOKEN}`; 
     fetchFromApi(res, API_URL, 'points-table');
 });
 
@@ -173,7 +185,7 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
-    // Correct Path: /matchInfoByMatchId/{matchId}/{token} - Using correct camelCase from docs
+    // Correct Path: /matchInfoByMatchId/{matchId}/{token}
     const API_URL = `${API_BASE_URL}/matchInfoByMatchId/${matchId}/${CRICKET_V5_TOKEN}`; 
     fetchFromApi(res, API_URL, 'match-info');
 });

@@ -1,6 +1,6 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - UPDATED with Correct Endpoints
+* LIVE CRICKET BACKEND PROXY (v5 API) - FINAL CORRECTED ENDPOINTS
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the
@@ -29,7 +29,7 @@ const API_BASE_URL = 'https://apicricketchampion.in/apiv5';
 
 // --- Middleware ---
 app.use(cors()); // Enable CORS for requests from your frontend
-app.use(express.json()); // Parse JSON request bodies (though not used much here)
+app.use(express.json()); // Parse JSON request bodies
 
 // --- Health Check Endpoint ---
 app.get('/', (req, res) => {
@@ -88,6 +88,7 @@ async function fetchFromApi(res, apiUrl, endpointName) {
  * @desc    Fetches live matches
  */
 app.get('/api/v5/live', (req, res) => {
+    // Correct Path: /liveMatchList/{token}
     const API_URL = `${API_BASE_URL}/liveMatchList/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'live');
 });
@@ -97,6 +98,7 @@ app.get('/api/v5/live', (req, res) => {
  * @desc    Fetches upcoming matches
  */
 app.get('/api/v5/upcoming', (req, res) => {
+    // Correct Path: /upcomingMatches/{token}
     const API_URL = `${API_BASE_URL}/upcomingMatches/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'upcoming');
 });
@@ -106,6 +108,7 @@ app.get('/api/v5/upcoming', (req, res) => {
  * @desc    Fetches recent matches
  */
 app.get('/api/v5/recent', (req, res) => {
+    // Correct Path: /recentMatches/{token}
     const API_URL = `${API_BASE_URL}/recentMatches/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'recent');
 });
@@ -116,6 +119,7 @@ app.get('/api/v5/recent', (req, res) => {
  * @desc    Fetches list of series
  */
 app.get('/api/v5/series', (req, res) => {
+    // Correct Path: /seriesList/{token}
     const API_URL = `${API_BASE_URL}/seriesList/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'series');
 });
@@ -125,6 +129,7 @@ app.get('/api/v5/series', (req, res) => {
  * @desc    Fetches latest news
  */
 app.get('/api/v5/news', (req, res) => {
+    // Correct Path: /news/{token}
     const API_URL = `${API_BASE_URL}/news/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'news');
 });
@@ -137,8 +142,8 @@ app.get('/api/v5/points-table/:seriesId', (req, res) => {
     const { seriesId } = req.params;
     if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
-    // --- CORRECTED PATH based on Postman Docs ---
-    const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`; 
+    // Correct Path: /pointTableBySeriesId/{seriesId}/{token}
+    const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'points-table');
 });
 
@@ -150,8 +155,8 @@ app.get('/api/v5/scorecard/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
-    // Assuming this path is correct based on Postman docs structure
-    const API_URL = `${API_BASE_URL}/match-scorecard/${matchId}/${CRICKET_V5_TOKEN}`;
+    // Correct Path: /scorecardByMatchId/{matchId}/{token}
+    const API_URL = `${API_BASE_URL}/scorecardByMatchId/${matchId}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'scorecard');
 });
 
@@ -163,8 +168,8 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
-    // Assuming this path is correct based on Postman docs structure
-    const API_URL = `${API_BASE_URL}/match-info/${matchId}/${CRICKET_V5_TOKEN}`;
+    // Correct Path: /matchInfoByMatchId/{matchId}/{token}
+    const API_URL = `${API_BASE_URL}/matchInfoByMatchId/${matchId}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'match-info');
 });
 
@@ -173,8 +178,8 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
  * @desc    Fetches T20 team rankings
  */
 app.get('/api/v5/rankings', (req, res) => {
-    // Assuming this path is correct based on Postman docs structure
-    const API_URL = `${API_BASE_URL}/team-ranking/t20/${CRICKET_V5_TOKEN}`;
+    // Correct Path: /teamRanking/{format}/{token} (format is t20, odi, test)
+    const API_URL = `${API_BASE_URL}/teamRanking/t20/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'rankings-t20');
 });
 
@@ -186,8 +191,8 @@ app.get('/api/v5/search-matches/:query', (req, res) => {
     const { query } = req.params;
     if (!query) return res.status(400).json({ error: 'Search query is required.' });
 
-    // --- CORRECTED PATH based on Postman Docs ---
-    const API_URL = `${API_BASE_URL}/searchMatches/${query}/${CRICKET_V5_TOKEN}`; 
+    // Correct Path: /searchMatches/{query}/{token}
+    const API_URL = `${API_BASE_URL}/searchMatches/${query}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'search-matches');
 });
 

@@ -1,68 +1,87 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - UPDATED with Specific Endpoints
+* LIVE CRICKET BACKEND PROXY (v5 API) - UPDATED with Correct Endpoints
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the
-* Cricket Live Line v5 API.
+* Cricket Live Line v5 API (apicricketchampion.in).
 *
 * It reads your secret API token from environment variables,
 * receives requests from your frontend, and forwards them
 * to the real API, adding your token securely.
 *
-* This version is updated to use the correct, specific
-* endpoints for each data type (e.g., /liveMatchList).
+* This version uses the specific endpoints confirmed by API docs.
 */
 
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch');
+const fetch = require('node-fetch'); // Ensure you have node-fetch installed (npm install node-fetch)
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // --- Your Secret API Key ---
+// Ensure this environment variable is set in your hosting (e.g., Render.com)
 const CRICKET_V5_TOKEN = process.env.CRICKET_V5_TOKEN;
 
-// --- CORRECTED API Base URL ---
+// --- CORRECT API Base URL (Confirmed by Provider/Docs) ---
 const API_BASE_URL = 'https://apicricketchampion.in/apiv5';
 
 // --- Middleware ---
-app.use(cors()); // Enable CORS
-app.use(express.json()); // Parse JSON bodies
+app.use(cors()); // Enable CORS for requests from your frontend
+app.use(express.json()); // Parse JSON request bodies (though not used much here)
 
 // --- Health Check Endpoint ---
 app.get('/', (req, res) => {
-    res.send('Cricket API Proxy is running.');
+    res.send('Cricket API Proxy v5 is running.');
 });
 
 /**
- * --- Generic Fetch Function (for all endpoints) ---
- * A simple wrapper to handle the fetch, check for errors, and parse JSON.
+ * --- Generic Fetch Function ---
+ * Handles fetching data from the external API, adding the token,
+ * checking for errors, and sending the response back to the frontend.
  */
 async function fetchFromApi(res, apiUrl, endpointName) {
     if (!CRICKET_V5_TOKEN) {
+        console.error(`API Token (CRICKET_V5_TOKEN) is not configured on the server.`);
         return res.status(500).json({ error: 'API token is not configured on the server. Set CRICKET_V5_TOKEN.' });
     }
     console.log(`Proxying request for ${endpointName} to: ${apiUrl}`);
 
     try {
         const apiResponse = await fetch(apiUrl);
+
+        // Check if the response status is OK (2xx range)
         if (!apiResponse.ok) {
-            const errorText = await apiResponse.text();
-            console.error(`API Error for ${endpointName} (${apiUrl}): ${errorText}`);
-            throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
+            // Try to get more details from the response body if it's an error
+            let errorBody = await apiResponse.text(); // Read as text first
+            try {
+                errorBody = JSON.parse(errorBody); // Try parsing as JSON
+            } catch (e) {
+                // Keep as text if not JSON
+            }
+            console.error(`API Error for ${endpointName} (${apiUrl}): Status ${apiResponse.status}, Body:`, errorBody);
+            // Send back the specific status code from the API
+            return res.status(apiResponse.status).json({
+                error: `API error: ${apiResponse.status} ${apiResponse.statusText}`,
+                details: errorBody // Include details if available
+            });
         }
+
+        // If response is OK, parse JSON and send to frontend
         const data = await apiResponse.json();
         res.json(data);
+
     } catch (error) {
-        console.error(`Error in fetchFromApi for ${endpointName}:`, error.message);
+        // Handle network errors (like timeouts, DNS issues)
+        console.error(`Network Error in fetchFromApi for ${endpointName} (${apiUrl}):`, error.message);
         res.status(500).json({ error: `Failed to fetch ${endpointName}. Reason: ${error.message}` });
     }
 }
 
-// --- API Endpoints ---
-// Each endpoint now calls its own dedicated API path.
+// =============================================================
+// --- API Proxy Endpoints ---
+// =============================================================
 
 /**
  * @route   GET /api/v5/live
@@ -106,7 +125,6 @@ app.get('/api/v5/series', (req, res) => {
  * @desc    Fetches latest news
  */
 app.get('/api/v5/news', (req, res) => {
-    // Using the /news endpoint from the Postman docs
     const API_URL = `${API_BASE_URL}/news/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'news');
 });
@@ -119,8 +137,8 @@ app.get('/api/v5/points-table/:seriesId', (req, res) => {
     const { seriesId } = req.params;
     if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
-    // Using the /series-points-table endpoint from the Postman docs
-    const API_URL = `${API_BASE_URL}/series-points-table/${seriesId}/${CRICKET_V5_TOKEN}`;
+    // --- CORRECTED PATH based on Postman Docs ---
+    const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'points-table');
 });
 
@@ -132,7 +150,7 @@ app.get('/api/v5/scorecard/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
-    // Using the /match-scorecard endpoint from the Postman docs
+    // Assuming this path is correct based on Postman docs structure
     const API_URL = `${API_BASE_URL}/match-scorecard/${matchId}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'scorecard');
 });
@@ -145,6 +163,7 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
+    // Assuming this path is correct based on Postman docs structure
     const API_URL = `${API_BASE_URL}/match-info/${matchId}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'match-info');
 });
@@ -154,7 +173,7 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
  * @desc    Fetches T20 team rankings
  */
 app.get('/api/v5/rankings', (req, res) => {
-    // We will fetch T20 rankings as a default
+    // Assuming this path is correct based on Postman docs structure
     const API_URL = `${API_BASE_URL}/team-ranking/t20/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'rankings-t20');
 });
@@ -167,6 +186,7 @@ app.get('/api/v5/search-matches/:query', (req, res) => {
     const { query } = req.params;
     if (!query) return res.status(400).json({ error: 'Search query is required.' });
 
+    // Assuming this path is correct based on Postman docs structure
     const API_URL = `${API_BASE_URL}/search-matches/${query}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'search-matches');
 });

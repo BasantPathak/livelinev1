@@ -10,26 +10,27 @@
 * receives requests from your frontend, and forwards them
 * to the real API, adding your token securely.
 *
-* - Uses /liveMatch/ for the featured top section.
-* - Uses /liveMatchList/ for the "Live" tab list.
+* - Uses /liveMatch/ for the featured top section (via /api/v5/featured-live).
+* - Uses /liveMatchList/ for the "Live" tab list (via /api/v5/live).
 */
 
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch'); // Use v2 for require (npm install node-fetch@2)
+const fetch = require('node-fetch'); // Ensure you have node-fetch installed (npm install node-fetch@2) - Use v2 for require
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // --- Your Secret API Key ---
+// Ensure this environment variable is set in your hosting (e.g., Render.com)
 const CRICKET_V5_TOKEN = process.env.CRICKET_V5_TOKEN;
 
-// --- CORRECT API Base URL ---
+// --- CORRECT API Base URL (Confirmed by Provider/Docs) ---
 const API_BASE_URL = 'https://apicricketchampion.in/apiv5';
 
 // --- Middleware ---
-app.use(cors());
-app.use(express.json());
+app.use(cors()); // Enable CORS for requests from your frontend
+app.use(express.json()); // Parse JSON request bodies
 
 // --- Health Check Endpoint ---
 app.get('/', (req, res) => {
@@ -38,6 +39,8 @@ app.get('/', (req, res) => {
 
 /**
  * --- Generic Fetch Function ---
+ * Handles fetching data from the external API, adding the token,
+ * checking for errors, and sending the response back to the frontend.
  */
 async function fetchFromApi(res, apiUrl, endpointName) {
     if (!CRICKET_V5_TOKEN) {
@@ -47,39 +50,51 @@ async function fetchFromApi(res, apiUrl, endpointName) {
     
     console.log(`[${endpointName}] Constructing API URL: ${apiUrl}`); 
     
+    // --- Define Request Options with Headers ---
     const requestOptions = {
-        method: 'GET',
+        method: 'GET', // Assuming all are GET requests
         headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'NodeFetchProxy/1.0'
+            'Accept': 'application/json', // Request JSON response
+            'User-Agent': 'NodeFetchProxy/1.0' // Identify the client
         }
     };
+    // --- End Header Definition ---
 
     try {
-        console.log(`[${endpointName}] Attempting fetch from: ${apiUrl} with headers:`, requestOptions.headers);
-        const apiResponse = await fetch(apiUrl, requestOptions);
+        console.log(`[${endpointName}] Attempting fetch from: ${apiUrl} with headers:`, requestOptions.headers); // Log headers too
+        const apiResponse = await fetch(apiUrl, requestOptions); // Pass options to fetch
 
+        // Check if the response status is OK (2xx range)
         if (!apiResponse.ok) {
-            let errorBody = await apiResponse.text();
-            try { errorBody = JSON.parse(errorBody); } catch (e) { /* Keep as text */ }
+            // Try to get more details from the response body if it's an error
+            let errorBody = await apiResponse.text(); // Read as text first
+            try {
+                errorBody = JSON.parse(errorBody); // Try parsing as JSON
+            } catch (e) {
+                // Keep as text if not JSON
+            }
+            // Log the detailed error
             console.error(`[${endpointName}] API Error (${apiUrl}): Status ${apiResponse.status}, Body:`, errorBody);
+            // Send back the specific status code from the API
             return res.status(apiResponse.status).json({
                 error: `API error: ${apiResponse.status} ${apiResponse.statusText}`,
-                details: errorBody
+                details: errorBody // Include details if available
             });
         }
 
+        // If response is OK, parse JSON and send to frontend
         const data = await apiResponse.json();
         console.log(`[${endpointName}] Successfully fetched data from: ${apiUrl}`);
-        // Add a check for the specific "Something went wrong" message from the API
-        if (data.status === false && data.msg === "Something went wrong.") {
+         // Add a check for the specific "Something went wrong" message from the API
+         if (data.status === false && data.msg === "Something went wrong.") {
              console.warn(`[${endpointName}] API returned 'Something went wrong.' for ${apiUrl}`);
              // Forward the error but maybe use a slightly different status if needed, e.g., 502 Bad Gateway
              return res.status(502).json(data);
-        }
+         }
         res.json(data);
 
     } catch (error) {
+        // Handle network errors (like timeouts, DNS issues)
         console.error(`[${endpointName}] Network Error (${apiUrl}):`, error.message);
         res.status(500).json({ error: `Failed to fetch ${endpointName}. Reason: ${error.message}` });
     }
@@ -99,6 +114,7 @@ app.get('/api/v5/featured-live', (req, res) => {
     fetchFromApi(res, API_URL, 'featured-live');
 });
 
+
 /**
  * @route   GET /api/v5/live
  * @desc    Fetches the list of all live matches for the "Live" tab
@@ -116,6 +132,7 @@ app.get('/api/v5/live', (req, res) => {
  * @desc    Fetches upcoming matches
  */
 app.get('/api/v5/upcoming', (req, res) => {
+    // Correct Path: /upcomingMatches/{token}
     const API_URL = `${API_BASE_URL}/upcomingMatches/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'upcoming');
 });
@@ -125,6 +142,7 @@ app.get('/api/v5/upcoming', (req, res) => {
  * @desc    Fetches recent matches
  */
 app.get('/api/v5/recent', (req, res) => {
+    // Correct Path: /recentMatches/{token}
     const API_URL = `${API_BASE_URL}/recentMatches/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'recent');
 });
@@ -135,6 +153,7 @@ app.get('/api/v5/recent', (req, res) => {
  * @desc    Fetches list of series
  */
 app.get('/api/v5/series', (req, res) => {
+    // Correct Path: /seriesList/{token}
     const API_URL = `${API_BASE_URL}/seriesList/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'series');
 });
@@ -144,21 +163,22 @@ app.get('/api/v5/series', (req, res) => {
  * @desc    Fetches latest news
  */
 app.get('/api/v5/news', (req, res) => {
+    // Correct Path: /news/{token}
     const API_URL = `${API_BASE_URL}/news/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'news');
 });
 
 /**
  * @route   GET /api/v5/points-table/:seriesId
- * @desc    Fetches points table
+ * @desc    Fetches points table using seriesId as query param
  */
 app.get('/api/v5/points-table/:seriesId', (req, res) => {
     const { seriesId } = req.params; 
     if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
-    // Correct Path: /pointTableBySeriesId/{seriesId}/{token} - Using correct casing now
-    const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`; 
-    console.log(`[points-table] Using path: /pointTableBySeriesId/`); // Update log message
+    // Path: /pointsTable/{token} with series_id as query param
+    const API_URL = `${API_BASE_URL}/pointsTable/${CRICKET_V5_TOKEN}?series_id=${seriesId}`; 
+    console.log(`[points-table] Testing with query param: series_id=${seriesId}`);
     fetchFromApi(res, API_URL, 'points-table');
 });
 
@@ -183,7 +203,7 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
-    // Correct Path: /matchInfoByMatchId/{matchId}/{token} - Using correct casing now
+    // Correct Path: /matchInfoByMatchId/{matchId}/{token}
     const API_URL = `${API_BASE_URL}/matchInfoByMatchId/${matchId}/${CRICKET_V5_TOKEN}`; 
     fetchFromApi(res, API_URL, 'match-info');
 });
@@ -193,7 +213,7 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
  * @desc    Fetches T20 team rankings
  */
 app.get('/api/v5/rankings', (req, res) => {
-    // Correct Path: /teamRanking/{format}/{token}
+    // Correct Path: /teamRanking/{format}/{token} (format is t20, odi, test)
     const API_URL = `${API_BASE_URL}/teamRanking/t20/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'rankings-t20');
 });

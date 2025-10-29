@@ -1,6 +1,6 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - Corrected Live Match Path
+* LIVE CRICKET BACKEND PROXY (v5 API) - Reverted Live Match Path to List
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the
@@ -10,7 +10,7 @@
 * receives requests from your frontend, and forwards them
 * to the real API, adding your token securely.
 *
-* This version corrects the path for the live match endpoint.
+* This version reverts the live match endpoint to /liveMatchList/.
 */
 
 const express = require('express');
@@ -102,8 +102,8 @@ async function fetchFromApi(res, apiUrl, endpointName) {
  * @desc    Fetches live matches
  */
 app.get('/api/v5/live', (req, res) => {
-    // Corrected Path: /liveMatch/{token}
-    const API_URL = `${API_BASE_URL}/liveMatch/${CRICKET_V5_TOKEN}`;
+    // Reverted Path: /liveMatchList/{token}
+    const API_URL = `${API_BASE_URL}/liveMatchList/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'live');
 });
 

@@ -23,8 +23,8 @@ const port = process.env.PORT || 3000;
 // Get the v5 token from environment variables.
 const CRICKET_V5_TOKEN = process.env.CRICKET_V5_TOKEN;
 
-// The correct domain is .com
-const API_BASE_URL = 'https://api.cricliveline.com/api/v5';
+// --- CORRECTED API Base URL ---
+const API_BASE_URL = 'https://apicricketchampion.in/api/v5'; // Updated domain
 
 // --- Middleware ---
 app.use(cors()); // Enable CORS
@@ -45,18 +45,23 @@ async function proxyRequest(req, res, apiPath) {
     const separator = apiPath.includes('?') ? '&' : '?';
     const API_URL = `${API_BASE_URL}${apiPath}${separator}token=${CRICKET_V5_TOKEN}`;
 
+    console.log(`Proxying request to: ${API_URL}`); // Log the URL being requested
+
     try {
         const apiResponse = await fetch(API_URL);
         if (!apiResponse.ok) {
             const errorText = await apiResponse.text();
-            throw new Error(`API error: ${apiResponse.statusText} - ${errorText}`);
+            console.error(`API Error Response Text: ${errorText}`); // Log the raw error
+            throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
         }
         const data = await apiResponse.json();
         res.json(data);
     } catch (error)
     {
         console.error(`Error fetching from ${apiPath}:`, error.message);
-        res.status(500).json({ error: `Failed to fetch data from ${apiPath}.` });
+        // Log the full error object for more details, especially for network errors
+        console.error(error);
+        res.status(500).json({ error: `Failed to fetch data from ${apiPath}. Reason: ${error.message}` });
     }
 }
 

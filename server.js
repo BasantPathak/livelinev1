@@ -1,6 +1,6 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - Corrected Points Table Path
+* LIVE CRICKET BACKEND PROXY (v5 API) - Points Table Query Param Test
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the
@@ -10,7 +10,7 @@
 * receives requests from your frontend, and forwards them
 * to the real API, adding your token securely.
 *
-* This version corrects the path for the points table endpoint.
+* This version tests using a query parameter for the points table series ID.
 */
 
 const express = require('express');
@@ -150,17 +150,15 @@ app.get('/api/v5/news', (req, res) => {
 
 /**
  * @route   GET /api/v5/points-table/:seriesId
- * @desc    Fetches points table (Note: API endpoint doesn't use seriesId in path)
+ * @desc    Fetches points table using seriesId as query param
  */
 app.get('/api/v5/points-table/:seriesId', (req, res) => {
-    // The seriesId is passed from the frontend dropdown, but the actual API
-    // endpoint for pointsTable doesn't seem to use it in the path according
-    // to the fetch snippet provided. We still accept it in the route for consistency.
     const { seriesId } = req.params; 
-    console.log(`[points-table] Received request for seriesId: ${seriesId} (Note: seriesId not used in API path)`);
+    if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
-    // Correct Path based on fetch snippet: /pointsTable/{token}
-    const API_URL = `${API_BASE_URL}/pointsTable/${CRICKET_V5_TOKEN}`; 
+    // Test: Using /pointsTable/{token} path with series_id as query param
+    const API_URL = `${API_BASE_URL}/pointsTable/${CRICKET_V5_TOKEN}?series_id=${seriesId}`; 
+    console.log(`[points-table] Testing with query param: series_id=${seriesId}`);
     fetchFromApi(res, API_URL, 'points-table');
 });
 

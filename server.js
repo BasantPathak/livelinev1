@@ -142,8 +142,8 @@ app.get('/api/v5/points-table/:seriesId', (req, res) => {
     const { seriesId } = req.params;
     if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
-    // Correct Path: /pointTableBySeriesId/{seriesId}/{token}
-    const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`;
+    // Correct Path: /pointTableBySeriesId/{seriesId}/{token} - Using correct camelCase
+    const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`; 
     fetchFromApi(res, API_URL, 'points-table');
 });
 
@@ -168,8 +168,8 @@ app.get('/api/v5/match-info/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
-    // Correct Path: /matchInfoByMatchId/{matchId}/{token}
-    const API_URL = `${API_BASE_URL}/matchInfoByMatchId/${matchId}/${CRICKET_V5_TOKEN}`;
+    // Correct Path: /matchInfoByMatchId/{matchId}/{token} - Using correct camelCase
+    const API_URL = `${API_BASE_URL}/matchInfoByMatchId/${matchId}/${CRICKET_V5_TOKEN}`; 
     fetchFromApi(res, API_URL, 'match-info');
 });
 

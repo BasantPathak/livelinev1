@@ -137,8 +137,8 @@ app.get('/api/v5/points-table/:seriesId', (req, res) => {
     const { seriesId } = req.params;
     if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
-    // --- CORRECTED PATH based on Postman Docs ---
-    const API_URL = `${API_BASE_URL}/pointTableBySeriesId/${seriesId}/${CRICKET_V5_TOKEN}`;
+    // --- UPDATED PATH: Trying underscore version ---
+    const API_URL = `${API_BASE_URL}/points_table_by_series_id/${seriesId}/${CRICKET_V5_TOKEN}`; 
     fetchFromApi(res, API_URL, 'points-table');
 });
 
@@ -196,4 +196,6 @@ app.get('/api/v5/search-matches/:query', (req, res) => {
 app.listen(port, () => {
     console.log(`Cricket v5 Proxy server running on http://localhost:${port}`);
 });
+
+
 

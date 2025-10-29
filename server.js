@@ -1,6 +1,6 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - Points Table Query Param Test
+* LIVE CRICKET BACKEND PROXY (v5 API) - Corrected Live Match Path
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the
@@ -10,7 +10,7 @@
 * receives requests from your frontend, and forwards them
 * to the real API, adding your token securely.
 *
-* This version tests using a query parameter for the points table series ID.
+* This version corrects the path for the live match endpoint.
 */
 
 const express = require('express');
@@ -102,8 +102,8 @@ async function fetchFromApi(res, apiUrl, endpointName) {
  * @desc    Fetches live matches
  */
 app.get('/api/v5/live', (req, res) => {
-    // Correct Path: /liveMatchList/{token}
-    const API_URL = `${API_BASE_URL}/liveMatchList/${CRICKET_V5_TOKEN}`;
+    // Corrected Path: /liveMatch/{token}
+    const API_URL = `${API_BASE_URL}/liveMatch/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'live');
 });
 
@@ -156,7 +156,7 @@ app.get('/api/v5/points-table/:seriesId', (req, res) => {
     const { seriesId } = req.params; 
     if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
-    // Test: Using /pointsTable/{token} path with series_id as query param
+    // Path: /pointsTable/{token} with series_id as query param
     const API_URL = `${API_BASE_URL}/pointsTable/${CRICKET_V5_TOKEN}?series_id=${seriesId}`; 
     console.log(`[points-table] Testing with query param: series_id=${seriesId}`);
     fetchFromApi(res, API_URL, 'points-table');

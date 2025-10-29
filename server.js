@@ -1,6 +1,6 @@
 /*
 * =============================================================
-* LIVE CRICKET BACKEND PROXY (v5 API) - UPDATED with /homeList
+* LIVE CRICKET BACKEND PROXY (v5 API) - UPDATED with Specific Endpoints
 * =============================================================
 *
 * This Node.js server acts as a secure "middle-man" for the
@@ -10,8 +10,8 @@
 * receives requests from your frontend, and forwards them
 * to the real API, adding your token securely.
 *
-* This version is updated to use the /homeList endpoint for
-* live, upcoming, series, and news data, with caching.
+* This version is updated to use the correct, specific
+* endpoints for each data type (e.g., /liveMatchList).
 */
 
 const express = require('express');
@@ -31,22 +31,14 @@ const API_BASE_URL = 'https://apicricketchampion.in/apiv5';
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 
-// --- Simple In-Memory Cache for /homeList ---
-let homeListCache = {
-    data: null,
-    timestamp: 0
-};
-const CACHE_DURATION = 60000; // 60 seconds (1 minute)
-
 // --- Health Check Endpoint ---
 app.get('/', (req, res) => {
     res.send('Cricket API Proxy is running.');
 });
 
 /**
- * --- Generic Fetch Function (for Scorecard/Points) ---
- * A simple wrapper to handle the fetch, check for errors, and parse JSON
- * for single-purpose endpoints.
+ * --- Generic Fetch Function (for all endpoints) ---
+ * A simple wrapper to handle the fetch, check for errors, and parse JSON.
  */
 async function fetchFromApi(res, apiUrl, endpointName) {
     if (!CRICKET_V5_TOKEN) {
@@ -69,135 +61,114 @@ async function fetchFromApi(res, apiUrl, endpointName) {
     }
 }
 
-/**
- * --- Fetch Function for HomeList (with caching) ---
- * Fetches the main /homeList endpoint and caches the result.
- */
-async function getHomeList() {
-    const now = Date.now();
-    // Check if cache is valid
-    if (homeListCache.data && (now - homeListCache.timestamp < CACHE_DURATION)) {
-        console.log("Returning /homeList from cache.");
-        return homeListCache.data;
-    }
-
-    // Cache is invalid or empty, fetch new data
-    if (!CRICKET_V5_TOKEN) {
-        throw new Error('API token is not configured on the server. Set CRICKET_V5_TOKEN.');
-    }
-    const API_URL = `${API_BASE_URL}/homeList/${CRICKET_V5_TOKEN}`;
-    console.log(`Fetching new data from /homeList: ${API_URL}`);
-
-    try {
-        const apiResponse = await fetch(API_URL);
-        if (!apiResponse.ok) {
-            const errorText = await apiResponse.text();
-            console.error(`API Error for /homeList (${API_URL}): ${errorText}`);
-            throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
-        }
-        const data = await apiResponse.json();
-        
-        // Check if the response is what we expect (it has a .data property)
-        if (!data || !data.data) {
-            console.error("Invalid /homeList response structure:", data);
-            throw new Error("Invalid response structure from /homeList API.");
-        }
-
-        // Update cache
-        homeListCache = {
-            data: data.data, // Store the .data object, as that's what we need
-            timestamp: now
-        };
-        console.log("Successfully fetched and cached /homeList data.");
-        return homeListCache.data;
-    } catch (error) {
-        console.error("Error in getHomeList:", error.message);
-        // If fetch fails, return old cache if it exists to avoid breaking the site
-        if (homeListCache.data) {
-            console.warn("Returning stale /homeList cache due to fetch error.");
-            return homeListCache.data;
-        }
-        // If no cache exists and fetch fails, throw the error
-        throw error;
-    }
-}
-
 // --- API Endpoints ---
+// Each endpoint now calls its own dedicated API path.
 
 /**
  * @route   GET /api/v5/live
- * @desc    Fetches live matches from homeList
+ * @desc    Fetches live matches
  */
-app.get('/api/v5/live', async (req, res) => {
-    try {
-        const homeData = await getHomeList();
-        res.json({ data: homeData.live_matches || [] });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+app.get('/api/v5/live', (req, res) => {
+    const API_URL = `${API_BASE_URL}/liveMatchList/${CRICKET_V5_TOKEN}`;
+    fetchFromApi(res, API_URL, 'live');
 });
 
 /**
  * @route   GET /api/v5/upcoming
- * @desc    Fetches upcoming matches from homeList
+ * @desc    Fetches upcoming matches
  */
-app.get('/api/v5/upcoming', async (req, res) => {
-    try {
-        const homeData = await getHomeList();
-        res.json({ data: homeData.upcoming_matches || [] });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+app.get('/api/v5/upcoming', (req, res) => {
+    const API_URL = `${API_BASE_URL}/upcomingMatches/${CRICKET_V5_TOKEN}`;
+    fetchFromApi(res, API_URL, 'upcoming');
 });
 
 /**
- * @route   GET /api/v5/series
- * @desc    Fetches list of series from homeList
+ * @route   GET /api/v5/recent
+ * @desc    Fetches recent matches
  */
-app.get('/api/v5/series', async (req, res) => {
-    try {
-        const homeData = await getHomeList();
-        res.json({ data: homeData.series_list || [] });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+app.get('/api/v5/recent', (req, res) => {
+    const API_URL = `${API_BASE_URL}/recentMatches/${CRICKET_V5_TOKEN}`;
+    fetchFromApi(res, API_URL, 'recent');
+});
+
+
+/**
+ * @route   GET /api/v5/series
+ * @desc    Fetches list of series
+ */
+app.get('/api/v5/series', (req, res) => {
+    const API_URL = `${API_BASE_URL}/seriesList/${CRICKET_V5_TOKEN}`;
+    fetchFromApi(res, API_URL, 'series');
 });
 
 /**
  * @route   GET /api/v5/news
- * @desc    Fetches latest news from homeList
+ * @desc    Fetches latest news
  */
-app.get('/api/v5/news', async (req, res) => {
-    try {
-        const homeData = await getHomeList();
-        res.json({ data: homeData.news || [] });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+app.get('/api/v5/news', (req, res) => {
+    // Using the /news endpoint from the Postman docs
+    const API_URL = `${API_BASE_URL}/news/${CRICKET_V5_TOKEN}`;
+    fetchFromApi(res, API_URL, 'news');
 });
 
 /**
  * @route   GET /api/v5/points-table/:seriesId
- * @desc    Fetches points table for a specific series (This is a separate endpoint)
+ * @desc    Fetches points table for a specific series
  */
 app.get('/api/v5/points-table/:seriesId', (req, res) => {
     const { seriesId } = req.params;
     if (!seriesId) return res.status(400).json({ error: 'Series ID is required.' });
     
+    // Using the /series-points-table endpoint from the Postman docs
     const API_URL = `${API_BASE_URL}/series-points-table/${seriesId}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'points-table');
 });
 
 /**
  * @route   GET /api/v5/scorecard/:matchId
- * @desc    Fetches full scorecard for a match (This is a separate endpoint)
+ * @desc    Fetches full scorecard for a match
  */
 app.get('/api/v5/scorecard/:matchId', (req, res) => {
     const { matchId } = req.params;
     if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
 
+    // Using the /match-scorecard endpoint from the Postman docs
     const API_URL = `${API_BASE_URL}/match-scorecard/${matchId}/${CRICKET_V5_TOKEN}`;
     fetchFromApi(res, API_URL, 'scorecard');
+});
+
+/**
+ * @route   GET /api/v5/match-info/:matchId
+ * @desc    Fetches match info (toss, venue, etc.)
+ */
+app.get('/api/v5/match-info/:matchId', (req, res) => {
+    const { matchId } = req.params;
+    if (!matchId) return res.status(400).json({ error: 'Match ID is required.' });
+
+    const API_URL = `${API_BASE_URL}/match-info/${matchId}/${CRICKET_V5_TOKEN}`;
+    fetchFromApi(res, API_URL, 'match-info');
+});
+
+/**
+ * @route   GET /api/v5/rankings
+ * @desc    Fetches T20 team rankings
+ */
+app.get('/api/v5/rankings', (req, res) => {
+    // We will fetch T20 rankings as a default
+    const API_URL = `${API_BASE_URL}/team-ranking/t20/${CRICKET_V5_TOKEN}`;
+    fetchFromApi(res, API_URL, 'rankings-t20');
+});
+
+/**
+ * @route   GET /api/v5/search-matches/:query
+ * @desc    Searches for matches by team name
+ */
+app.get('/api/v5/search-matches/:query', (req, res) => {
+    const { query } = req.params;
+    if (!query) return res.status(400).json({ error: 'Search query is required.' });
+
+    const API_URL = `${API_BASE_URL}/search-matches/${query}/${CRICKET_V5_TOKEN}`;
+    fetchFromApi(res, API_URL, 'search-matches');
 });
 
 

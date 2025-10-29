@@ -22,7 +22,11 @@ const port = process.env.PORT || 3000;
 // --- Your Secret API Key ---
 // Get the v5 token from environment variables.
 const CRICKET_V5_TOKEN = process.env.CRICKET_V5_TOKEN;
-const API_BASE_URL = 'https://api.cricketliveline.com/api/v5';
+
+// --- !! FIX !! ---
+// The correct domain is .live, not .com
+const API_BASE_URL = 'https://api.cricketliveline.live/api/v5';
+// --- !! END FIX !! ---
 
 // --- Middleware ---
 app.use(cors()); // Enable CORS
